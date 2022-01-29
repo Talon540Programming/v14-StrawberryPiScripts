@@ -17,7 +17,7 @@ def shooterCalculations(distanceFromTopHub):
   distanceFromHubBase = math.sqrt(math.pow(distanceFromTopHub,2)-math.pow((hubHeight-limeLightHeight),2))
   rawShooterAngle = math.asin((hubHeight-limeLightHeight)/(distanceFromTopHub))
   
-  shootingAngle = math.degrees(math.atan(math.radians(((distanceFromHubBase * math.tan(AoA)) - (2 * (hubHeight-limeLightHeight)))/(-1 * distanceFromHubBase))))
+  shootingAngle = math.degrees(math.atan(((distanceFromHubBase * math.tan(AoA)) - (2 * (hubHeight-limeLightHeight)))/(-distanceFromHubBase)))
   shootingSpeed = 0 
 
   # Add physics and calculus here. Update angle. Get speed
