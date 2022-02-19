@@ -1,8 +1,14 @@
 from cscore import CameraServer
+from networktables import NetworkTables, NetworkTable
 import cv2
 import numpy as np
 from time import sleep
+
+last_value = 0.8
+
+
 def main():
+    global last_value
     cs = CameraServer.getInstance()
     cs.enableLogging()
     camera = cs.startAutomaticCapture()
@@ -26,13 +32,15 @@ def main():
     red2Upper = (15, 255, 255)
     # allow the camera or video file to warm up
     sleep(2.0)
-    blue = True
+    blue = False
+    NetworkTables.initialize(server='roborio-540-frc.local')
+    PiTable = NetworkTables.getTable('strawberryPi')
     while True:
         time, frame = cvSink.grabFrame(img)
         if time == 0:
             outputStream.notifyError(cvSink.getError())
             continue
-        frame = cv2.resize(frame, (600, 338))
+        frame = cv2.resize(frame, (1280, 960))
         blurred = cv2.GaussianBlur(frame, (101, 101), 0)
         hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
         # construct a mask for red or blue, then perform a series of dilations and erosions to remove any small blobs
@@ -49,16 +57,25 @@ def main():
 
         if circles is not None:
             circles = np.uint16(np.around(circles))
-            for i in circles[0, :]:
-                center = (i[0], i[1])
-                # circle center
-                cv2.circle(mask, center, 1, (255, 0, 0), 3)
-                # circle outline
-                radius = i[2]
-                cv2.circle(mask, center, radius, (255, 0, 255), 3)
-                cv2.circle(frame, center, 1, (255, 0, 0), 3)
-                radius = i[2]
-                cv2.circle(frame, center, radius, (0, 0, 255), 3)
+            print(circles)
+            biggest_circle = circles[[i[0][2] for i in circles].index(max([i[0][2] for i in circles]))]
+            center = (biggest_circle[0][0], biggest_circle[0][1])
+            # circle center
+            cv2.circle(mask, center, 1, (255, 0, 255), 3)
+            # circle outline
+            radius = biggest_circle[0][2]
+            print((center[0] - 640) / 1000)
+            turn_percentage = (center[0] - 640) / 1000
+            last_value = turn_percentage
+            PiTable.putValue('TurnPercentage', turn_percentage)
+            cv2.circle(mask, center, radius, (255, 0, 255), 3)
+            cv2.circle(frame, center, 1, (255, 0, 0), 3)
+            cv2.circle(frame, center, radius, (0, 0, 255), 3)
+        else:
+            print(None)
+            PiTable.putValue('TurnPercentage', last_value)
         # show the frame to our screen
         outputStream.putFrame(mask)
+
+
 main()
