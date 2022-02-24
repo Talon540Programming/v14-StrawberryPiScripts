@@ -6,7 +6,7 @@ import cv2
 
 app = Flask(__name__)
 
-camera = cv2.VideoCapture(0, cv2.CAP_V4L2)  # use 0 for web camera
+camera = cv2.VideoCapture(0)  # use 0 for web camera
 
 def gen_frames():  # generate frame by frame from camera
     while True:
