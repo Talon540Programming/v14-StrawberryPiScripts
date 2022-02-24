@@ -33,8 +33,6 @@ def main():
     # allow the camera or video file to warm up
     sleep(2.0)
     blue = False
-    NetworkTables.initialize(server='roborio-540-frc.local')
-    PiTable = NetworkTables.getTable('strawberryPi')
     while True:
         time, frame = cvSink.grabFrame(img)
         if time == 0:
@@ -67,13 +65,13 @@ def main():
             print((center[0] - 640) / 1000)
             turn_percentage = (center[0] - 640) / 1000
             last_value = turn_percentage
-            PiTable.putValue('TurnPercentage', turn_percentage)
+            # put turn_percentage to table
             cv2.circle(mask, center, radius, (255, 0, 255), 3)
             cv2.circle(frame, center, 1, (255, 0, 0), 3)
             cv2.circle(frame, center, radius, (0, 0, 255), 3)
         else:
             print(None)
-            PiTable.putValue('TurnPercentage', last_value)
+            # put none in table
         # show the frame to our screen
         outputStream.putFrame(mask)
 
