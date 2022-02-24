@@ -9,7 +9,8 @@ last_value = 0.8
 
 def main():
     global last_value
-    cs = CameraServer.getInstance()
+    cs = CameraServer.getInstance(_nextPort = 5802)
+    # cs._nextPort = 5802
     cs.enableLogging()
     camera = cs.startAutomaticCapture()
     camera.setResolution(320, 240)
