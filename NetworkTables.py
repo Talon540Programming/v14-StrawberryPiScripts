@@ -10,7 +10,8 @@ from networktables import NetworkTables
 # Initalise client connection to the RoboRio server
 NetworkTables.initialize(server='roborio-540-FRC.local')
 
-piTable = NetworkTables.getDefault().getTable("TalonPi")
-piTable.getEntry("alliance").setString("Tets")
+table = NetworkTables.getDefault().getTable("TalonPi")
 
-print(piTable.getEntry("alliance").getString("null"))
+table.getEntry("alliance").setString("Tets")
+
+print(table.getEntry("alliance").getString("null"))
