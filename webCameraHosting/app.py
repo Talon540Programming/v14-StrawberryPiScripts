@@ -8,7 +8,7 @@ app = Flask(__name__)
 
 camera = cv2.VideoCapture(0)  # use 0 for web camera
 
-def gen_frames():  # generate frame by frame from camera
+def raw_gen():  # generate frame by frame from camera
     while True:
         # Capture frame-by-frame
         success, frame = camera.read()  # read the camera frame
@@ -21,10 +21,10 @@ def gen_frames():  # generate frame by frame from camera
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')  # concat frame one by one and show result
 
 
-@app.route('/raw_feed')
+@app.route('/video_feed')
 def raw_feed():
     #Video streaming route. Put this in the src attribute of an img tag
-    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(raw_gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 @app.route('/')
