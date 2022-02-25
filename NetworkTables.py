@@ -11,5 +11,6 @@ from networktables import NetworkTables
 NetworkTables.initialize(server='roborio-540-FRC.local')
 
 piTable = NetworkTables.getDefault().getTable("TalonPi")
+piTable.getEntry("Alliance").setString("Tets")
 
 print(piTable.getEntry("alliance").getString("null"))
