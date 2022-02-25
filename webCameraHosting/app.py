@@ -15,6 +15,7 @@ def gen_frames():  # generate frame by frame from camera
         if not success:
             break
         else:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             ret, buffer = cv2.imencode('.jpg', frame)
             frame = buffer.tobytes()
             yield (b'--frame\r\n'
