@@ -1,4 +1,0 @@
-# Install CSCORE
-
-cd ..
-pwd
