@@ -11,23 +11,46 @@ for ifaceName in interfaces():
         if not(' '.join(addresses).startswith("127.")):
             local_ip = ' '.join(addresses)
 
-
 app = Flask(__name__)
+camera = cv2.VideoCapture(0)  # use 0 for web camera #'cams' for all connects cams
 
-camera = cv2.VideoCapture(0)  # use 0 for web camera
-
-def raw_gen():  # generate frame by frame from camera
+def raw_gen():  # Raw Video Feed
     while True:
         # Capture frame-by-frame
         success, frame = camera.read()  # read the camera frame
         if not success:
             break
         else:
-            #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             ret, buffer = cv2.imencode('.jpg', frame)
             frame = buffer.tobytes()
             yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')  # concat frame one by one and show result
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+# def blue_gen():  # Blue Video Feed
+#     while True:
+#         # Capture frame-by-frame
+#         success, frame = camera.read()  # read the camera frame
+#         if not success:
+#             break
+#         else:
+#             ret, buffer = cv2.imencode('.jpg', frame)
+#             frame = buffer.tobytes()
+#             yield (b'--frame\r\n'
+#                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+# def red_gen():  # Red Video Feed
+#     while True:
+#         # Capture frame-by-frame
+#         success, frame = camera.read()  # read the camera frame
+#         if not success:
+#             break
+#         else:
+#             ret, buffer = cv2.imencode('.jpg', frame)
+#             frame = buffer.tobytes()
+#             yield (b'--frame\r\n'
+#                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+
 
 
 @app.route('/raw_feed')
@@ -35,8 +58,18 @@ def raw_feed():
     #Video streaming route. Put this in the src attribute of an img tag
     return Response(raw_gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+# @app.route('/blue_feed')
+# def blue_feed():
+#     #Video streaming route. Put this in the src attribute of an img tag
+#     return Response(blue_gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
-@app.route('/')
+# @app.route('/red_feed')
+# def red_feed():
+#     #Video streaming route. Put this in the src attribute of an img tag
+#     return Response(red_gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
+@app.route('/') #Base root
 def index():
     """Video streaming home page."""
     return render_template('index.html')
