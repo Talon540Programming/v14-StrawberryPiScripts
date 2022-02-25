@@ -8,7 +8,7 @@ if [ "$(uname)" != "Linux" ]; then
     exit 1 #OS is not Linux based
 fi
 
-if [[ "$(uname -a)" != *"arm64"* ]]; then
+if [[ "$(uname -a)" != *"aarch64"* ]]; then
   echo "It's there."
   exit 1 #OS is not ARM64 based
 fi
