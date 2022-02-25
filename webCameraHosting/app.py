@@ -5,9 +5,17 @@ from flask import Flask, render_template, Response
 import cv2
 import socket
 
+from netifaces import interfaces, ifaddresses, AF_INET
+for ifaceName in interfaces():
+    addresses = [i['addr'] for i in ifaddresses(ifaceName).setdefault(AF_INET, [{'addr':'No IP addr'}] )]
+    if(' '.join(addresses) != 'No IP addr' ):
+        if not(' '.join(addresses).startswith("127.")):
+            local_ip = ' '.join(addresses)
+
+
 app = Flask(__name__)
 
-camera = cv2.VideoCapture()  # use 0 for web camera
+camera = cv2.VideoCapture(0)  # use 0 for web camera
 
 def raw_gen():  # generate frame by frame from camera
     while True:
@@ -36,6 +44,6 @@ def index():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
-    # app.run(host='192.168.1.253', debug=True,port="5800")
+    #app.run(debug=True)
+    app.run(host=local_ip, debug=True,port="5800")
     # app.run(host=socket.gethostbyname(socket.gethostname()), debug=True,port="5800")
