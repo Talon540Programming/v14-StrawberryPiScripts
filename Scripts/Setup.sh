@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 #First Time Setup for Raspberry Pi
 
 if [ "$(uname)" != "Linux" ]; then
@@ -17,7 +16,6 @@ echo "hi"
 
 
 # Install Network Tables
-
+pip3 install pynetworktables
 #Install OpenCV2
-
-
+pip3 install opencv-python
