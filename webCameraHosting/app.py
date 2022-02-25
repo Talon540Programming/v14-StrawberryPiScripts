@@ -22,7 +22,7 @@ def gen_frames():  # generate frame by frame from camera
 
 
 @app.route('/raw_feed')
-def video_feed():
+def raw_feed():
     #Video streaming route. Put this in the src attribute of an img tag
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
