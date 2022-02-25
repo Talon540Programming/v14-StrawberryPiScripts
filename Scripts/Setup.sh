@@ -1,3 +1,6 @@
+#!/bin/bash
+
+
 #First Time Setup for Raspberry Pi
 
 if [ "$(uname)" != "Linux" ]; then
