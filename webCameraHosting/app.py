@@ -36,4 +36,5 @@ def index():
 
 
 if __name__ == '__main__':
-    app.run(host=socket.gethostbyname(socket.gethostname()), debug=True,port="5800")
+    app.run(host='192.168.1.253', debug=True,port="5800")
+    #app.run(host=socket.gethostbyname(socket.gethostname()), debug=True,port="5800")
