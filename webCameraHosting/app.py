@@ -3,7 +3,6 @@
 
 from flask import Flask, render_template, Response
 import cv2
-import socket
 
 from netifaces import interfaces, ifaddresses, AF_INET
 for ifaceName in interfaces():
@@ -45,5 +44,4 @@ def index():
 
 if __name__ == '__main__':
     #app.run(debug=True)
-    app.run(host=local_ip, debug=True,port="5800")
-    # app.run(host=socket.gethostbyname(socket.gethostname()), debug=True,port="5800")
+    app.run(host=local_ip, debug=True,port="5800",use_reloader=False)
