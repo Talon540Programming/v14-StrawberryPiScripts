@@ -7,7 +7,7 @@ import socket
 
 app = Flask(__name__)
 
-camera = cv2.VideoCapture(0)  # use 0 for web camera
+camera = cv2.VideoCapture()  # use 0 for web camera
 
 def raw_gen():  # generate frame by frame from camera
     while True:
