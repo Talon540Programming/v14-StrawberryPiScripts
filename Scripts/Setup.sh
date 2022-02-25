@@ -14,6 +14,9 @@ fi
 
 echo "hi"
 
+ping -c 1 1.1.1.1
+status=$?
+echo "The date command exit status : ${status}"
 
 # Install Network Tables
 pip3 install pynetworktables
