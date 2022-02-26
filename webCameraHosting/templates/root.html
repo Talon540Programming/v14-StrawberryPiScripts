@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <div>
+            <img src="{{ url_for('raw_feed') }}" width="50%" height="50%">
+            <h3>RAW FEED</h3>
+            <img src="{{ url_for('blue_feed') }}" width="50%" height="50%"> 
+            <h3>Blue Mask</h3>
+            <img src="{{ url_for('red_feed') }}" width="50%" height="50%"> 
+            <h3>Red Mask</h3>
+        </div>
+    </div>
+</div>
+</body>
+</html>
