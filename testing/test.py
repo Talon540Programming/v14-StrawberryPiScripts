@@ -2,6 +2,13 @@
 import numpy as np
 import cv2
 import time
+
+import argparse
+parser = argparse.ArgumentParser(description='Choose Color')
+parser.add_argument("-c", help="Pick Ball Color")
+args = parser.parse_args()
+
+
 # define HoughCircles constants
 ROUNDNESS_THRESH = 10
 CENTER_DETECT_THRESH = 60
@@ -31,9 +38,9 @@ while True:
     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
     # construct a mask for red or blue, then perform a series of dilations and erosions to remove any small blobs
     # left in the mask
-    if blue:
+    if(args.c.lower() == "blue"):
         mask = cv2.inRange(hsv, blueLower, blueUpper)
-    else:
+    elif(args.c.lower() == "red"):
         mask = cv2.inRange(hsv, red1Lower, red1Upper) + cv2.inRange(hsv, red2Lower, red2Upper)
     mask = cv2.erode(mask, None, iterations=2)
     mask = cv2.dilate(mask, None, iterations=2)
