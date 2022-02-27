@@ -2,7 +2,7 @@
 
 #Make sure to configure all settings in sudo raspi-config first
 
-
+echo checking OS
 if [ "$(uname)" != "Linux" ]; then
     echo "Linux is Expected OS exit code 1"
     exit 1 #OS is not Linux based
@@ -13,6 +13,7 @@ if [[ "$(uname -a)" != *"aarch64"* ]]; then
   exit 1 #OS is not aarch64 based
 fi
 
+echo checking Network
 ping -c 1 1.1.1.1
 status=$?
 if [ $status != 0 ]; then
@@ -21,12 +22,13 @@ if [ $status != 0 ]; then
     exit 1 #no network
 fi
 
+echo Updating Packages
 sudo apt update && sudo apt upgrade
-
+echo Installing required packages
 sudo apt install python3-pip git curl dpkg debian-archive-keyring
-
+echo Installing required pip modules
 #Install NetworkTables, OpenCV2 and its dependencies
-/usr/bin/pip3 install opencv-python pynetworktables flask
+/usr/bin/pip3 install opencv-python numpy pynetworktables flask netifaces
 
 
 
