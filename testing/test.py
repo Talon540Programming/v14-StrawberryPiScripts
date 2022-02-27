@@ -8,7 +8,6 @@ parser = argparse.ArgumentParser(description='Choose Color')
 parser.add_argument("-c", help="Pick Ball Color")
 args = parser.parse_args()
 
-
 # define HoughCircles constants
 ROUNDNESS_THRESH = 10
 CENTER_DETECT_THRESH = 60
@@ -26,9 +25,7 @@ red2Lower = (0, 90, 20)
 red2Upper = (15, 255, 255)
 # allow the camera or video file to warm up
 time.sleep(2.0)
-blue = True
-# keep looping
-last_value = 0.8
+
 while True:
     # grab the current frame
     _, frame = vs.read()
