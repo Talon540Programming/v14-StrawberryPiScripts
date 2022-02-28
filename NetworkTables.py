@@ -6,7 +6,7 @@
 # 3. If it is successful then run this script, else troubleshoot
 
 import threading
-from networktables import NetworkTables
+from networktables import NetworkTableEntry, NetworkTables, NetworkTablesInstance
 
 serverCondition = threading.Condition() #Establish a Condition
 rio_notified = False
@@ -21,7 +21,7 @@ def connectionListener(connected, info):
         serverCondition.notify()
 
 # Initalise client connection to the RoboRio server
-NetworkTables.initialize(server='roborio-540-FRC.local') #NetworkTables.initialize(server='10.5.40.2')
+NetworkTables.initialize(server='10.5.40.2')
 NetworkTables.addConnectionListener(connectionListener, immediateNotify=True)
 
 # Check if we have initialized a connection to the RoboRio
@@ -43,3 +43,6 @@ print("Connected to NetworkTables Server")
 # Once it recives the packet it will write to the table what the alliance color is
 # We will then listen for that using another listener that will wait for that
 
+table = NetworkTablesInstance.getDefault().getTable("limelight")
+
+print(table.getEntry("tx").getDouble(0))
