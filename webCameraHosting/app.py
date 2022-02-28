@@ -5,6 +5,10 @@ import time
 from flask import Flask, render_template, Response
 
 from netifaces import interfaces, ifaddresses, AF_INET
+
+# Get the local IP address for the Device
+# Might throw BS if on a mac. Dont cry
+
 for ifaceName in interfaces():
     addresses = [i['addr'] for i in ifaddresses(ifaceName).setdefault(AF_INET, [{'addr':'No IP addr'}] )]
     if(' '.join(addresses) != 'No IP addr' ):
@@ -15,7 +19,7 @@ app = Flask(__name__)
 
 import argparse
 parser = argparse.ArgumentParser(description='Choose Color')
-parser.add_argument("-c", help="Pick Ball Color")
+parser.add_argument("-c", help="Pick Ball Color") #For testing
 args = parser.parse_args()
 
 # define HoughCircles constants
