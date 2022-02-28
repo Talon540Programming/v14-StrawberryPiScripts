@@ -92,11 +92,11 @@ def raw_gen():  # Raw Video Feed
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-@app.route('/mask') #Base root
+@app.route('/mask') 
 def mask_feed():
     return Response(Mask(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
-@app.route('/raw_feed')
+@app.route('/raw')
 def raw_feed():
     #Video streaming route. Put this in the src attribute of an img tag
     return Response(raw_gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
@@ -105,7 +105,6 @@ def raw_feed():
 def index():
     """Video streaming home page."""
     return render_template('root.html')
-
     
 if __name__ == '__main__':
     #app.run(debug=True)
