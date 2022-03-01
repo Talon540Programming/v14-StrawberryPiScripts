@@ -47,7 +47,6 @@ with serverCondition:
 
 # What needs to be tested:
 
-
 # Get Local ip
 def local_ip():
     for ifaceName in interfaces():
@@ -60,8 +59,6 @@ def local_ip():
 def getAlliacneColor():
     return(NetworkTables.getTable('SmartDashboard').getString('Alliance Color', False))
 
-# print("Alliance Color: "+getAlliacneColor())
-# print("Local ip: "+local_ip())
 
 sd = NetworkTables.getTable("SmartDashboard")
 auto_value = sd.getAutoUpdateValue("robotTime", 0)
