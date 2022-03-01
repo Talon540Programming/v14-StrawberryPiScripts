@@ -48,18 +48,12 @@ with serverCondition:
 # What needs to be tested:
 
 
-#State that we are ready!
-
-# apply this later
-# NetworkTables.getTable('SmartDashboard').putString('Alliance Color','PIREADY')
-# value = NetworkTables.getTable('SmartDashboard').getAutoUpdateValue('Alliance Color','void')
-
 # Get Local ip
 def local_ip():
     for ifaceName in interfaces():
         addresses = [i['addr'] for i in ifaddresses(ifaceName).setdefault(AF_INET, [{'addr':'No IP addr'}] )]
         if(' '.join(addresses) != 'No IP addr' ):
-            if not(' '.join(addresses).startswith("127.")):
+            if not(' '.join(addresses).startswith("127.")): # Local looping Subnet
                 return(' '.join(addresses))
 
 # Get Alliance color from Smart Dashboard
@@ -76,6 +70,22 @@ while True:
     print("robotTime:", auto_value.value)
     time.sleep(1)
 
+#Inaccesabile Testing
+exit(0)
+
+
+talonpi = NetworkTables.getTable('TalonPi')
+talonpi.putString('Alliance Color','PIREADY')
+allianceColor = talonpi.getAutoUpdateValue('Alliance Color','PIREADY')
+
+i=0
+while True:
+    if not allianceColor == "PIREADY":
+        print(allianceColor)
+    else:
+        i+1
+        print(i)
+    
 # What needs to be added:
 # Sending and Listening for Packet
 # Reading from the Table
