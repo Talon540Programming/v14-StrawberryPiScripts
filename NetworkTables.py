@@ -23,7 +23,7 @@ def connectionListener(connected, info):
         serverCondition.notify()
 
 # Initalise client connection to the RoboRio server
-
+NetworkTables.startClientTeam(540)
 NetworkTables.initialize(server='10.5.40.2')
 NetworkTables.addConnectionListener(connectionListener, immediateNotify=True)
 
