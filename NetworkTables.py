@@ -60,28 +60,16 @@ def getAlliacneColor():
     return(NetworkTables.getTable('SmartDashboard').getString('Alliance Color', False))
 
 
-sd = NetworkTables.getTable("SmartDashboard")
-auto_value = sd.getAutoUpdateValue("robotTime", 0)
-
-while True:
-    print("robotTime:", auto_value.value)
-    time.sleep(1)
-
-#Inaccesabile Testing
-exit(0)
-
-
 talonpi = NetworkTables.getTable('TalonPi')
 talonpi.putString('Alliance Color','PIREADY')
 allianceColor = talonpi.getAutoUpdateValue('Alliance Color','PIREADY')
 
-i=0
 while True:
-    if not allianceColor == "PIREADY":
-        print(allianceColor)
-    else:
-        i+1
-        print(i)
+    if not allianceColor.value == "PIREADY":
+        print(allianceColor.value)
+    # else:
+    #     print("Pi is Awaiting Color")
+    time.sleep(1)
     
 # What needs to be added:
 # Sending and Listening for Packet
