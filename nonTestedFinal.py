@@ -88,16 +88,12 @@ def mask_gen():
             hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
             # construct a mask for red or blue, then perform a series of dilations and erosions to remove any small blobs
             # left in the mask
-            if allianceColor == "PIREADY":
-                continue
-            if(allianceColor == "blue"):
+            if(allianceColor == "blue"): # Blue Mask
                 mask = cv2.inRange(hsv, blueLower, blueUpper)
-            elif(allianceColor == "red"):
+            elif(allianceColor == "red"): # Red Mask
                 mask = cv2.inRange(hsv, red1Lower, red1Upper) + cv2.inRange(hsv, red2Lower, red2Upper)
-            else:
-                print("Alliance Color is neither blue or red")
-                talonpi.putString('Alliance Color','nonconforming value')
-                continue
+            else: # Default if they didn't post
+                mask = cv2.inRange(hsv, red1Lower, red1Upper) + cv2.inRange(hsv, red2Lower, red2Upper)
             mask = cv2.erode(mask, None, iterations=2)
             mask = cv2.dilate(mask, None, iterations=2)
             # use Hough Circle Transform to find the roundest object on the screen and trace its perimeter
