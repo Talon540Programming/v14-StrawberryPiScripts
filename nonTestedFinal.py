@@ -40,7 +40,6 @@ with serverCondition:
 # What needs to be tested:
 
 talonpi = NetworkTables.getTable('TalonPi')
-talonpi.putString('Alliance Color','PIREADY')
 allianceColor = talonpi.getAutoUpdateValue('Alliance Color','PIREADY').value
 
 # Get Local ip
