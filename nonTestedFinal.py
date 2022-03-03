@@ -35,22 +35,23 @@ with serverCondition:
         serverCondition.wait()
 
 
-# The Server has been Connected to so we can Procced with the Code
+# The Server has been Connected to so we can Procced with the Code !! REST OF THE CODE !!
 
 # What needs to be tested:
 
 talonpi = NetworkTables.getTable('TalonPi')
 allianceColor = talonpi.getAutoUpdateValue('Alliance Color','PIREADY').value
+gamemode = talonpi.getAutoUpdateValue('Gamemode','PIREADY').value
+motorValue = talonpi.getAutoUpdateValue('Motor Value','PIREADY').value
 
 # Get Local ip
-def local_ip():
-    for ifaceName in interfaces():
-        addresses = [i['addr'] for i in ifaddresses(ifaceName).setdefault(AF_INET, [{'addr':'No IP addr'}] )]
-        if(' '.join(addresses) != 'No IP addr' ):
-            if not(' '.join(addresses).startswith("127.")): # Local looping Subnet
-                talonpi.putString('pi_local_ip',str(' '.join(addresses)))
-                return(str(' '.join(addresses)))
-
+local_ip = False
+for ifaceName in interfaces():
+    addresses = [i['addr'] for i in ifaddresses(ifaceName).setdefault(AF_INET, [{'addr':'No IP addr'}] )]
+    if(' '.join(addresses) != 'No IP addr' ):
+        if not(' '.join(addresses).startswith("127.")): # Local looping Subnet
+            if (' '.join(addresses).startswith("10.5.40")):
+                local_ip = str(' '.join(addresses))
 
 app = Flask(__name__)
 
@@ -72,51 +73,31 @@ red2Upper = (15, 255, 255)
 # allow the camera or video file to warm up
 time.sleep(2.0)
 
-def mask_gen():
-    while True:
-        # Capture frame-by-frame
-        success, frame = vs.read()  # read the camera frame
-        if not success:
-            break
-        else:
-            # grab the current frame
-            _, frame = vs.read()
-            # resize the frame, blur it, and convert it to the HSV
-
-            blurred = cv2.GaussianBlur(frame, (101, 101), 0)
-            hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
-            # construct a mask for red or blue, then perform a series of dilations and erosions to remove any small blobs
-            # left in the mask
-            if(allianceColor == "blue"): # Blue Mask
-                mask = cv2.inRange(hsv, blueLower, blueUpper)
-            elif(allianceColor == "red"): # Red Mask
-                mask = cv2.inRange(hsv, red1Lower, red1Upper) + cv2.inRange(hsv, red2Lower, red2Upper)
-            else: # Default if they didn't post
-                mask = cv2.inRange(hsv, red1Lower, red1Upper) + cv2.inRange(hsv, red2Lower, red2Upper)
-            mask = cv2.erode(mask, None, iterations=2)
-            mask = cv2.dilate(mask, None, iterations=2)
-            # use Hough Circle Transform to find the roundest object on the screen and trace its perimeter
-            circles = cv2.HoughCircles(mask, cv2.HOUGH_GRADIENT, 2, 50, param1=ROUNDNESS_THRESH,
-                                    param2=CENTER_DETECT_THRESH, minRadius=MIN_RADIUS, maxRadius=0)
-            if circles is not None:
-                circles = np.uint16(np.around(circles))
-                biggest_circle = circles[[i[0][2] for i in circles].index(max([i[0][2] for i in circles]))]
-                center = (biggest_circle[0][0], biggest_circle[0][1])
-                # circle center
-                cv2.circle(mask, center, 1, (255, 0, 255), 3)
-                # circle outline
-                radius = biggest_circle[0][2]
-                talonpi.putNumber('Motor Value',(center[0] - 640) / 8000)
-
-                cv2.circle(mask, center, radius, (255, 0, 255), 3)
-                cv2.circle(frame, center, 1, (255, 0, 0), 3)
-                cv2.circle(frame, center, radius, (0, 0, 255), 3)
-            else:
-                talonpi.putNumber('Motor Value', 0)
-            ret, buffer = cv2.imencode('.jpg', frame)
-            frame = buffer.tobytes()
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+def ballDetection(frame):
+    # resize the frame, blur it, and convert it to the HSV
+    blurred = cv2.GaussianBlur(frame, (101, 101), 0)
+    hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
+    # construct a mask for red or blue, then perform a series of dilations and erosions to remove any small blobs
+    # left in the mask
+    if allianceColor == "blue":
+        mask = cv2.inRange(hsv, blueLower, blueUpper)
+    elif allianceColor == "red":
+        mask = cv2.inRange(hsv, red1Lower, red1Upper) + cv2.inRange(hsv, red2Lower, red2Upper)
+    else:
+        mask = cv2.inRange(hsv, red1Lower, red1Upper) + cv2.inRange(hsv, red2Lower, red2Upper)
+    mask = cv2.erode(mask, None, iterations=2)
+    mask = cv2.dilate(mask, None, iterations=2)
+    # use Hough Circle Transform to find the roundest object on the screen and trace its perimeter
+    circles = cv2.HoughCircles(mask, cv2.HOUGH_GRADIENT, 2, 50, param1=ROUNDNESS_THRESH,param2=CENTER_DETECT_THRESH, minRadius=MIN_RADIUS, maxRadius=0)
+    if circles is not None:
+        circles = np.uint16(np.around(circles))
+        biggest_circle = circles[[i[0][2] for i in circles].index(max([i[0][2] for i in circles]))]
+        center = (biggest_circle[0][0], biggest_circle[0][1])
+        if motorValue != (center[0] - 640) / 8000:
+            talonpi.putNumber('Motor Value',(center[0] - 640) / 8000)
+    else:
+        if motorValue != 0:
+            talonpi.putNumber('Motor Value',0)
 
 def raw_gen():  # Raw Video Feed
     while True:
@@ -126,13 +107,10 @@ def raw_gen():  # Raw Video Feed
             break
         else:
             ret, buffer = cv2.imencode('.jpg', frame)
-            frame = buffer.tobytes()
+            biteBuffer = buffer.tobytes()
             yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-
-@app.route('/mask') 
-def mask_feed():
-    return Response(mask_gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
+                   b'Content-Type: image/jpeg\r\n\r\n' + biteBuffer + b'\r\n')
+            ballDetection(frame)
 
 @app.route('/raw')
 def raw_feed():
@@ -146,4 +124,4 @@ def index():
     
 if __name__ == '__main__':
     #app.run(debug=True)
-    app.run(host=local_ip(), debug=True,port="5800",use_reloader=False)
+    app.run(host=local_ip, debug=True,port="5800",use_reloader=False)

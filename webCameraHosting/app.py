@@ -3,7 +3,6 @@ import numpy as np
 import cv2
 import time
 from flask import Flask, render_template, Response
-
 from netifaces import interfaces, ifaddresses, AF_INET
 
 # Get the local IP address for the Device
@@ -40,49 +39,28 @@ red2Upper = (15, 255, 255)
 # allow the camera or video file to warm up
 time.sleep(2.0)
 
-def Mask():
-    while True:
-        # Capture frame-by-frame
-        success, frame = vs.read()  # read the camera frame
-        if not success:
-            break
-        else:
-            # grab the current frame
-            _, frame = vs.read()
-            # resize the frame, blur it, and convert it to the HSV
+def ballDetection(frame):
+    # resize the frame, blur it, and convert it to the HSV
 
-            blurred = cv2.GaussianBlur(frame, (101, 101), 0)
-            hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
-            # construct a mask for red or blue, then perform a series of dilations and erosions to remove any small blobs
-            # left in the mask
-            if(args.c.lower() == "blue"):
-                mask = cv2.inRange(hsv, blueLower, blueUpper)
-            elif(args.c.lower() == "red"):
-                mask = cv2.inRange(hsv, red1Lower, red1Upper) + cv2.inRange(hsv, red2Lower, red2Upper)
-            mask = cv2.erode(mask, None, iterations=2)
-            mask = cv2.dilate(mask, None, iterations=2)
-            # use Hough Circle Transform to find the roundest object on the screen and trace its perimeter
-            circles = cv2.HoughCircles(mask, cv2.HOUGH_GRADIENT, 2, 50, param1=ROUNDNESS_THRESH,
-                                    param2=CENTER_DETECT_THRESH, minRadius=MIN_RADIUS, maxRadius=0)
-            if circles is not None:
-                circles = np.uint16(np.around(circles))
-                biggest_circle = circles[[i[0][2] for i in circles].index(max([i[0][2] for i in circles]))]
-                center = (biggest_circle[0][0], biggest_circle[0][1])
-                # circle center
-                cv2.circle(mask, center, 1, (255, 0, 255), 3)
-                # circle outline
-                radius = biggest_circle[0][2]
-                print((center[0] - 640) / 8000)
-
-                cv2.circle(mask, center, radius, (255, 0, 255), 3)
-                cv2.circle(frame, center, 1, (255, 0, 0), 3)
-                cv2.circle(frame, center, radius, (0, 0, 255), 3)
-            else:
-                print(None)
-            ret, buffer = cv2.imencode('.jpg', frame)
-            frame = buffer.tobytes()
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+    blurred = cv2.GaussianBlur(frame, (101, 101), 0)
+    hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
+    # construct a mask for red or blue, then perform a series of dilations and erosions to remove any small blobs
+    # left in the mask
+    if(args.c.lower() == "blue"):
+        mask = cv2.inRange(hsv, blueLower, blueUpper)
+    else:
+        mask = cv2.inRange(hsv, red1Lower, red1Upper) + cv2.inRange(hsv, red2Lower, red2Upper)
+    mask = cv2.erode(mask, None, iterations=2)
+    mask = cv2.dilate(mask, None, iterations=2)
+    # use Hough Circle Transform to find the roundest object on the screen and trace its perimeter
+    circles = cv2.HoughCircles(mask, cv2.HOUGH_GRADIENT, 2, 50, param1=ROUNDNESS_THRESH,param2=CENTER_DETECT_THRESH, minRadius=MIN_RADIUS, maxRadius=0)
+    if circles is not None:
+        circles = np.uint16(np.around(circles))
+        biggest_circle = circles[[i[0][2] for i in circles].index(max([i[0][2] for i in circles]))]
+        center = (biggest_circle[0][0], biggest_circle[0][1])
+        print((center[0] - 640) / 8000)
+    else:
+        print(None)
 
 def raw_gen():  # Raw Video Feed
     while True:
@@ -92,13 +70,10 @@ def raw_gen():  # Raw Video Feed
             break
         else:
             ret, buffer = cv2.imencode('.jpg', frame)
-            frame = buffer.tobytes()
+            biteBuffer = buffer.tobytes()
             yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-
-@app.route('/mask') 
-def mask_feed():
-    return Response(Mask(), mimetype='multipart/x-mixed-replace; boundary=frame')
+                   b'Content-Type: image/jpeg\r\n\r\n' + biteBuffer + b'\r\n')
+            ballDetection(frame)
 
 @app.route('/raw')
 def raw_feed():
