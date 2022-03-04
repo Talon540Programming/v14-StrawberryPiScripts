@@ -4,6 +4,7 @@ import cv2
 import time
 from flask import Flask, render_template, Response
 from netifaces import interfaces, ifaddresses, AF_INET
+from threading import Thread
 
 # Get the local IP address for the Device
 # Might throw BS if on a mac. Dont cry
@@ -26,30 +27,60 @@ ROUNDNESS_THRESH = 10
 CENTER_DETECT_THRESH = 60
 MIN_RADIUS = 20
 # construct the argument parse and parse the arguments
-vs = cv2.VideoCapture(0)
-# define the lower and upper boundaries of the blue or red
-# ball in the HSV color space, then initialize the
-# list of tracked points
+
+class WebCamVideoStream:
+    def __init__(self, src=0):
+        # initialize the video camera stream and read the first frame 
+        # from the stream
+        self.stream = cv2.VideoCapture(src)
+        (self.grabbed, self.frame) = self.stream.read()
+
+        # initialize the variable used to inidicate if the thread 
+        # should be stopped
+        self.stopped = False
+
+    def start(self):
+        # start the thread to read frames from the video stream
+        Thread(target=self.update, args=()).start()
+        return self
+
+    def update(self):
+        # keep looping infinitely until the thread is stopped
+        while True:
+            # if the thread indicator variable is set, stop the thread
+            if self.stopped:
+                return
+            # otherwise read the next frame from the stream
+            (self.grabbed, self.frame) = self.stream.read()
+
+    def read(self):
+        # return the frame most recently read
+        return self.frame
+
+    def stop(self):
+        # indicate that the thread should be stopped
+        self.stopped = True
+
+
+stream = WebCamVideoStream(src=0).start()
+
 blueLower = (95, 90, 20)
 blueUpper = (135, 255, 255)
 red1Lower = (165, 90, 20)
 red1Upper = (180, 255, 255)
 red2Lower = (0, 90, 20)
 red2Upper = (15, 255, 255)
-# allow the camera or video file to warm up
-time.sleep(2.0)
+ROUNDNESS_THRESH = 10
+CENTER_DETECT_THRESH = 60
+MIN_RADIUS = 20
 
 def ballDetection(frame):
     # resize the frame, blur it, and convert it to the HSV
-
     blurred = cv2.GaussianBlur(frame, (101, 101), 0)
     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
     # construct a mask for red or blue, then perform a series of dilations and erosions to remove any small blobs
     # left in the mask
-    if(args.c.lower() == "blue"):
-        mask = cv2.inRange(hsv, blueLower, blueUpper)
-    else:
-        mask = cv2.inRange(hsv, red1Lower, red1Upper) + cv2.inRange(hsv, red2Lower, red2Upper)
+    mask = cv2.inRange(hsv, blueLower, blueUpper)
     mask = cv2.erode(mask, None, iterations=2)
     mask = cv2.dilate(mask, None, iterations=2)
     # use Hough Circle Transform to find the roundest object on the screen and trace its perimeter
@@ -62,23 +93,24 @@ def ballDetection(frame):
     else:
         print(None)
 
-def raw_gen():  # Raw Video Feed
+# loop over some frames
+def gen():
     while True:
-        # Capture frame-by-frame
-        success, frame = vs.read()  # read the camera frame
-        if not success:
-            break
-        else:
-            ret, buffer = cv2.imencode('.jpg', frame)
-            biteBuffer = buffer.tobytes()
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + biteBuffer + b'\r\n')
-            ballDetection(frame)
+        # Raw feed code -->
+        frame = stream.read()
+        # frame = imutils.resize(frame, width=960) # resize frame like this
+        ret, buffer = cv2.imencode('.jpg', frame)
+        biteBuffer = buffer.tobytes()
+        yield (b'--frame\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' + biteBuffer + b'\r\n')
+
+        # Ball detection Code -->
+        ballDetection(frame)
 
 @app.route('/raw')
 def raw_feed():
     #Video streaming route. Put this in the src attribute of an img tag
-    return Response(raw_gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/') #Base root
 def index():

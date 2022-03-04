@@ -1,5 +1,8 @@
 # import the necessary packages
+from netifaces import interfaces, ifaddresses, AF_INET
+import imutils
 import threading
+import imutils
 from networktables import NetworkTables
 import numpy as np
 import cv2
@@ -21,8 +24,8 @@ def connectionListener(connected, info):
         serverCondition.notify()
 
 # Initalise client connection to the RoboRio server
-NetworkTables.startClientTeam(540)
-NetworkTables.initialize(server='10.5.40.2')
+NetworkTables.startClientTeam(540) # Establish user as a Client connection to the RoboRio's server
+NetworkTables.initialize(server='10.5.40.2') # RoboRio ip
 NetworkTables.addConnectionListener(connectionListener, immediateNotify=True)
 
 # Check if we have initialized a connection to the RoboRio
@@ -37,15 +40,13 @@ with serverCondition:
 
 # The Server has been Connected to so we can Procced with the Code !! REST OF THE CODE !!
 
-# What needs to be tested:
-
 talonpi = NetworkTables.getTable('TalonPi')
 allianceColor = talonpi.getAutoUpdateValue('Alliance Color','PIREADY').value
 gamemode = talonpi.getAutoUpdateValue('Gamemode','PIREADY').value
 motorValue = talonpi.getAutoUpdateValue('Motor Value','PIREADY').value
 
 # Get Local ip
-local_ip = False
+local_ip = False # Returns False if no local ip is found. Due to pi issues
 for ifaceName in interfaces():
     addresses = [i['addr'] for i in ifaddresses(ifaceName).setdefault(AF_INET, [{'addr':'No IP addr'}] )]
     if(' '.join(addresses) != 'No IP addr' ):
@@ -53,26 +54,53 @@ for ifaceName in interfaces():
             if (' '.join(addresses).startswith("10.5.40")):
                 local_ip = str(' '.join(addresses))
 
-app = Flask(__name__)
+# Initalise flask app
+app = Flask(__name__) 
 
-# define HoughCircles constants
-ROUNDNESS_THRESH = 10
-CENTER_DETECT_THRESH = 60
-MIN_RADIUS = 20
-# construct the argument parse and parse the arguments
-vs = cv2.VideoCapture(0)
-# define the lower and upper boundaries of the blue or red
-# ball in the HSV color space, then initialize the
-# list of tracked points
+# Use multithreaded Camera server instead of single threaded
+class WebCamVideoStream:
+    def __init__(self, src=0):
+        self.stream = cv2.VideoCapture(src)
+        (self.grabbed, self.frame) = self.stream.read()
+        self.stopped = False
+
+    def start(self):
+        # start the thread to read frames from the video stream
+        threading.Thread(target=self.update, args=()).start()
+        return self
+
+    def update(self):
+        # keep looping infinitely until the thread is stopped
+        while True:
+            # if the thread indicator variable is set, stop the thread
+            if self.stopped:
+                return
+            # otherwise read the next frame from the stream
+            (self.grabbed, self.frame) = self.stream.read()
+
+    def read(self):
+        # return the frame most recently read
+        return self.frame
+
+    def stop(self):
+        # indicate that the thread should be stopped
+        self.stopped = True
+
+# Call camera from thread
+stream = WebCamVideoStream(src=0).start()
+
+# Define ball and masking variables
 blueLower = (95, 90, 20)
 blueUpper = (135, 255, 255)
 red1Lower = (165, 90, 20)
 red1Upper = (180, 255, 255)
 red2Lower = (0, 90, 20)
 red2Upper = (15, 255, 255)
-# allow the camera or video file to warm up
-time.sleep(2.0)
+ROUNDNESS_THRESH = 10
+CENTER_DETECT_THRESH = 60
+MIN_RADIUS = 20
 
+# Mask and ballDetection function
 def ballDetection(frame):
     # resize the frame, blur it, and convert it to the HSV
     blurred = cv2.GaussianBlur(frame, (101, 101), 0)
@@ -93,35 +121,37 @@ def ballDetection(frame):
         circles = np.uint16(np.around(circles))
         biggest_circle = circles[[i[0][2] for i in circles].index(max([i[0][2] for i in circles]))]
         center = (biggest_circle[0][0], biggest_circle[0][1])
-        if motorValue != (center[0] - 640) / 8000:
-            talonpi.putNumber('Motor Value',(center[0] - 640) / 8000)
+        print((center[0] - 640) / 8000)
     else:
-        if motorValue != 0:
-            talonpi.putNumber('Motor Value',0)
+        print(None)
 
-def raw_gen():  # Raw Video Feed
+# Get raw frames and run ball Detection code
+def gen():
     while True:
-        # Capture frame-by-frame
-        success, frame = vs.read()  # read the camera frame
-        if not success:
-            break
-        else:
-            ret, buffer = cv2.imencode('.jpg', frame)
-            biteBuffer = buffer.tobytes()
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + biteBuffer + b'\r\n')
-            ballDetection(frame)
+        # Raw feed code -->
+        frame = stream.read()
+        # frame = imutils.resize(frame, width=960) # resize frame like this # Does height automatically
+        # Make the frame viewable and easy to send
+        ret, buffer = cv2.imencode('.jpg', frame)
+        biteBuffer = buffer.tobytes()
+        yield (b'--frame\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' + biteBuffer + b'\r\n')
+
+        # Ball detection Code -->
+        ballDetection(frame)
 
 @app.route('/raw')
 def raw_feed():
     #Video streaming route. Put this in the src attribute of an img tag
-    return Response(raw_gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/') #Base root
 def index():
+    # Web Server main screen. Rendered as an HTML page
     """Video streaming home page."""
     return render_template('root.html')
     
 if __name__ == '__main__':
+    # Run the app with Special Attributes: host: pi ip (allows for cross network connection); debug: debug; port: Port to run web server; use_reloader: reload app on wait (False to not overwrite and overload frame capture)
     #app.run(debug=True)
     app.run(host=local_ip, debug=True,port="5800",use_reloader=False)
