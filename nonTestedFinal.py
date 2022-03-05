@@ -109,7 +109,7 @@ while True:
     # Raw feed code -->
     # print(allianceColor.value)
     frame = stream.read()
-    frame = imutils.resize(frame, width=1280) # resize frame like this # Does height automatically
+    # frame = imutils.resize(frame, width=1280) # resize frame like this # Does height automatically
 
     # <-- Ball Detection code -->
 
