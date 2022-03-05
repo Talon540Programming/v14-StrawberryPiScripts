@@ -2,6 +2,7 @@
 import numpy as np
 import cv2
 import time
+import imutils
 from flask import Flask, render_template, Response
 from netifaces import interfaces, ifaddresses, AF_INET
 from threading import Thread
@@ -62,7 +63,8 @@ class WebCamVideoStream:
         self.stopped = True
 
 
-stream = WebCamVideoStream(src=0).start()
+stream = WebCamVideoStream(src=1).start()
+# stream = cv2.VideoCapture(1)
 
 blueLower = (95, 90, 20)
 blueUpper = (135, 255, 255)
@@ -80,7 +82,7 @@ def ballDetection(frame):
     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
     # construct a mask for red or blue, then perform a series of dilations and erosions to remove any small blobs
     # left in the mask
-    mask = cv2.inRange(hsv, blueLower, blueUpper)
+    mask = cv2.inRange(hsv, red1Lower, red1Upper) + cv2.inRange(hsv, red2Lower, red2Upper)
     mask = cv2.erode(mask, None, iterations=2)
     mask = cv2.dilate(mask, None, iterations=2)
     # use Hough Circle Transform to find the roundest object on the screen and trace its perimeter
@@ -98,7 +100,7 @@ def gen():
     while True:
         # Raw feed code -->
         frame = stream.read()
-        # frame = imutils.resize(frame, width=960) # resize frame like this
+        frame = imutils.resize(frame, width=640) # resize frame like this
         ret, buffer = cv2.imencode('.jpg', frame)
         biteBuffer = buffer.tobytes()
         yield (b'--frame\r\n'

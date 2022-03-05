@@ -2,12 +2,43 @@
 import numpy as np
 import cv2
 import time
+import threading
 # define HoughCircles constants
 ROUNDNESS_THRESH = 10
 CENTER_DETECT_THRESH = 60
 MIN_RADIUS = 20
-# construct the argument parse and parse the arguments
-vs = cv2.VideoCapture(0)
+# construct the argument parse and parse the arguments]
+
+class WebCamVideoStream:
+    def __init__(self, src=0):
+        self.stream = cv2.VideoCapture(src)
+        (self.grabbed, self.frame) = self.stream.read()
+        self.stopped = False
+
+    def start(self):
+        # start the thread to read frames from the video stream
+        threading.Thread(target=self.update, args=()).start()
+        return self
+
+    def update(self):
+        # keep looping infinitely until the thread is stopped
+        while True:
+            # if the thread indicator variable is set, stop the thread
+            if self.stopped:
+                return
+            # otherwise read the next frame from the stream
+            (self.grabbed, self.frame) = self.stream.read()
+
+    def read(self):
+        # return the frame most recently read
+        return self.frame
+
+    def stop(self):
+        # indicate that the thread should be stopped
+        self.stopped = True
+
+
+vs = WebCamVideoStream(src=0).start()
 # define the lower and upper boundaries of the blue or red
 # ball in the HSV color space, then initialize the
 # list of tracked points
@@ -19,12 +50,12 @@ red2Lower = (0, 90, 20)
 red2Upper = (15, 255, 255)
 # allow the camera or video file to warm up
 time.sleep(2.0)
-blue = True
+blue = False
 # keep looping
 last_value = 0.8
 while True:
     # grab the current frame
-    _, frame = vs.read()
+    frame = vs.read()
     # resize the frame, blur it, and convert it to the HSV
 
     blurred = cv2.GaussianBlur(frame, (101, 101), 0)

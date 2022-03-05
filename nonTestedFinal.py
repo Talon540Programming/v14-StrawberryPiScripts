@@ -41,9 +41,9 @@ with serverCondition:
 # The Server has been Connected to so we can Procced with the Code !! REST OF THE CODE !!
 
 talonpi = NetworkTables.getTable('TalonPi')
-allianceColor = talonpi.getAutoUpdateValue('Alliance Color','PIREADY').value
-gamemode = talonpi.getAutoUpdateValue('Gamemode','PIREADY').value
-motorValue = talonpi.getAutoUpdateValue('Motor Value','PIREADY').value
+allianceColor = talonpi.getAutoUpdateValue('Alliance Color','PIREADY')
+gamemode = talonpi.getAutoUpdateValue('Gamemode','PIREADY')
+motorValue = talonpi.getAutoUpdateValue('Motor Value',0)
 
 # Get Local ip
 local_ip = False # Returns False if no local ip is found. Due to pi issues
@@ -53,9 +53,8 @@ for ifaceName in interfaces():
         if not(' '.join(addresses).startswith("127.")): # Local looping Subnet
             if (' '.join(addresses).startswith("10.5.40")):
                 local_ip = str(' '.join(addresses))
+                talonpi.getEntry('local_ip').setString(local_ip)
 
-# Initalise flask app
-app = Flask(__name__) 
 
 # Use multithreaded Camera server instead of single threaded
 class WebCamVideoStream:
@@ -88,6 +87,7 @@ class WebCamVideoStream:
 
 # Call camera from thread
 stream = WebCamVideoStream(src=0).start()
+# stream = cv2.VideoCapture(0)
 
 # Define ball and masking variables
 blueLower = (95, 90, 20)
@@ -100,19 +100,31 @@ ROUNDNESS_THRESH = 10
 CENTER_DETECT_THRESH = 60
 MIN_RADIUS = 20
 
-# Mask and ballDetection function
-def ballDetection(frame):
+
+# Get raw frames and run ball Detection code
+last_value = 0
+print("Running ball Detection code")
+print("Hopefully pushing data to NetworkTables")
+while True:
+    # Raw feed code -->
+    # print(allianceColor.value)
+    frame = stream.read()
+    frame = imutils.resize(frame, width=1280) # resize frame like this # Does height automatically
+
+    # <-- Ball Detection code -->
+
     # resize the frame, blur it, and convert it to the HSV
     blurred = cv2.GaussianBlur(frame, (101, 101), 0)
     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
     # construct a mask for red or blue, then perform a series of dilations and erosions to remove any small blobs
     # left in the mask
-    if allianceColor == "blue":
+    if allianceColor.value == "blue":
+        talonpi.getEntry('test').setString('BLUE')
         mask = cv2.inRange(hsv, blueLower, blueUpper)
-    elif allianceColor == "red":
-        mask = cv2.inRange(hsv, red1Lower, red1Upper) + cv2.inRange(hsv, red2Lower, red2Upper)
     else:
+        talonpi.getEntry('test').setString('RED')
         mask = cv2.inRange(hsv, red1Lower, red1Upper) + cv2.inRange(hsv, red2Lower, red2Upper)
+
     mask = cv2.erode(mask, None, iterations=2)
     mask = cv2.dilate(mask, None, iterations=2)
     # use Hough Circle Transform to find the roundest object on the screen and trace its perimeter
@@ -121,37 +133,17 @@ def ballDetection(frame):
         circles = np.uint16(np.around(circles))
         biggest_circle = circles[[i[0][2] for i in circles].index(max([i[0][2] for i in circles]))]
         center = (biggest_circle[0][0], biggest_circle[0][1])
-        print((center[0] - 640) / 8000)
-    else:
-        print(None)
-
-# Get raw frames and run ball Detection code
-def gen():
-    while True:
-        # Raw feed code -->
-        frame = stream.read()
-        # frame = imutils.resize(frame, width=960) # resize frame like this # Does height automatically
-        # Make the frame viewable and easy to send
-        ret, buffer = cv2.imencode('.jpg', frame)
-        biteBuffer = buffer.tobytes()
-        yield (b'--frame\r\n'
-                b'Content-Type: image/jpeg\r\n\r\n' + biteBuffer + b'\r\n')
-
-        # Ball detection Code -->
-        ballDetection(frame)
-
-@app.route('/raw')
-def raw_feed():
-    #Video streaming route. Put this in the src attribute of an img tag
-    return Response(gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
-@app.route('/') #Base root
-def index():
-    # Web Server main screen. Rendered as an HTML page
-    """Video streaming home page."""
-    return render_template('root.html')
-    
-if __name__ == '__main__':
-    # Run the app with Special Attributes: host: pi ip (allows for cross network connection); debug: debug; port: Port to run web server; use_reloader: reload app on wait (False to not overwrite and overload frame capture)
-    #app.run(debug=True)
-    app.run(host=local_ip, debug=True,port="5800",use_reloader=False)
+        talonpi.getEntry('Motor Value').setDouble(640-center[0])
+    # else:
+    #     talonpi.getEntry('Motor Value').setDouble(0)
+    # show the frames to our screen
+    # cv2.imshow("Frame", frame)
+    # cv2.imshow('Mask', mask)
+    # key = cv2.waitKey(1) & 0xFF
+    # # if the 'q' key is pressed, stop the loop
+    # if key == ord("q"):
+    #     break
+# stop camera
+stream.release()
+# close all windows
+cv2.destroyAllWindows()
