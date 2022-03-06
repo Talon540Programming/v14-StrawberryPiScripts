@@ -63,7 +63,7 @@ class WebCamVideoStream:
         self.stopped = True
 
 
-stream = WebCamVideoStream(src=1).start()
+stream = WebCamVideoStream(src=0).start()
 # stream = cv2.VideoCapture(1)
 
 blueLower = (95, 90, 20)

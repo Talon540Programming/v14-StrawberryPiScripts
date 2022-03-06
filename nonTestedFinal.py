@@ -85,7 +85,7 @@ class WebCamVideoStream:
         self.stopped = True
 
 # Call camera from thread
-stream = WebCamVideoStream(src=1).start()
+stream = WebCamVideoStream(src=0).start()
 # stream = cv2.VideoCapture(1)
 
 # Define ball and masking variables
@@ -99,7 +99,7 @@ ROUNDNESS_THRESH = 10
 CENTER_DETECT_THRESH = 60
 MIN_RADIUS = 20
 
-frame_width = 1280
+frame_width = 320
 
 # Get raw frames and run ball Detection code
 last_value = 0
@@ -137,12 +137,12 @@ while True:
     # else:
     #     talonpi.getEntry('Motor Value').setDouble(0)
     # show the frames to our screen
-    cv2.imshow("Frame", frame)
-    cv2.imshow('Mask', mask)
-    key = cv2.waitKey(1) & 0xFF
-    # if the 'q' key is pressed, stop the loop
-    if key == ord("q"):
-        break
+    # cv2.imshow("Frame", frame)
+    # cv2.imshow('Mask', mask)
+    # key = cv2.waitKey(1) & 0xFF
+    # # if the 'q' key is pressed, stop the loop
+    # if key == ord("q"):
+    #     break
 # stop camera
 stream.release()
 # close all windows
