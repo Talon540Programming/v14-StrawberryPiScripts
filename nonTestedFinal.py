@@ -119,12 +119,12 @@ while True:
     # construct a mask for red or blue, then perform a series of dilations and erosions to remove any small blobs
     # left in the mask
     if allianceColor.value == "blue":
-        talonpi.getEntry('test').setString('BLUE')
         mask = cv2.inRange(hsv, blueLower, blueUpper)
     else:
-        talonpi.getEntry('test').setString('RED')
         mask = cv2.inRange(hsv, red1Lower, red1Upper) + cv2.inRange(hsv, red2Lower, red2Upper)
-
+        
+    # Define the currently used color to be checked later and error checked
+    talonpi.getEntry('Working Color').setString(allianceColor.value)
     mask = cv2.erode(mask, None, iterations=2)
     mask = cv2.dilate(mask, None, iterations=2)
     # use Hough Circle Transform to find the roundest object on the screen and trace its perimeter
@@ -136,7 +136,7 @@ while True:
         talonpi.getEntry('Motor Value').setDouble(((frame_width/2)-center[0]))
     # else:
     #     talonpi.getEntry('Motor Value').setDouble(0)
-    # show the frames to our screen
+    # show the frames to our screen (debugging)
     # cv2.imshow("Frame", frame)
     # cv2.imshow('Mask', mask)
     # key = cv2.waitKey(1) & 0xFF
