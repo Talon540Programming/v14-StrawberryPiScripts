@@ -52,6 +52,7 @@ with serverCondition:
 talonpi = NetworkTables.getTable('TalonPi')
 allianceColor = talonpi.getAutoUpdateValue('Alliance Color','PIREADY')
 gamemode = talonpi.getAutoUpdateValue('Gamemode','PIREADY')
+debuggingMode = talonpi.getAutoUpdateValue('Debugging',False)
 talonpi.getEntry('local_ip').setString(getLocalIp())
 
 frame_width = 320
@@ -106,7 +107,7 @@ last_value = 0
 print("Running ball Detection code")
 print("Hopefully pushing data to NetworkTables")
 
-while True:
+while (gamemode == "auto") or (debuggingMode == True):
     # Raw feed code -->
     # print(allianceColor.value)
     frame = stream.read()
