@@ -18,16 +18,16 @@ rio_notified = [False]
 # Do this by establishing a listener that will activate when the server is initialized
 
 # Get Local ip
-local_ip = False # Returns False if no local ip is found. Due to pi issues
-for ifaceName in interfaces():
-    addresses = [i['addr'] for i in ifaddresses(ifaceName).setdefault(AF_INET, [{'addr':'No IP addr'}] )]
-    if(' '.join(addresses) != 'No IP addr' ):
-        if not(' '.join(addresses).startswith("127.")): # Local looping Subnet
-            if (' '.join(addresses).startswith("10.5.40")):
-                local_ip = str(' '.join(addresses))
+def getLocalIp():
+    for ifaceName in interfaces():
+        addresses = [i['addr'] for i in ifaddresses(ifaceName).setdefault(AF_INET, [{'addr':'No IP addr'}] )]
+        if(' '.join(addresses) != 'No IP addr' ):
+            if not(' '.join(addresses).startswith("127.")): # Local looping Subnet
+                if (' '.join(addresses).startswith("10.5.40")):
+                    return str(' '.join(addresses))
 
 def connectionListener(connected, info):
-    print(info, '; Connected=%s' % connected, " local ip: "+ local_ip)
+    print(info, '; Connected=%s' % connected, " local ip: "+ getLocalIp())
     with serverCondition:
         rio_notified[0] = True
         serverCondition.notify()
@@ -52,8 +52,9 @@ with serverCondition:
 talonpi = NetworkTables.getTable('TalonPi')
 allianceColor = talonpi.getAutoUpdateValue('Alliance Color','PIREADY')
 gamemode = talonpi.getAutoUpdateValue('Gamemode','PIREADY')
-motorValue = talonpi.getAutoUpdateValue('Motor Value',0)
-talonpi.getEntry('local_ip').setString(local_ip)
+talonpi.getEntry('local_ip').setString(getLocalIp())
+
+frame_width = 320
 
 # Use multithreaded Camera server instead of single threaded
 class WebCamVideoStream:
@@ -78,6 +79,7 @@ class WebCamVideoStream:
 
     def read(self):
         # return the frame most recently read
+        self.frame = imutils.resize(self.frame, width=frame_width)
         return self.frame
 
     def stop(self):
@@ -99,17 +101,15 @@ ROUNDNESS_THRESH = 10
 CENTER_DETECT_THRESH = 60
 MIN_RADIUS = 20
 
-frame_width = 320
-
 # Get raw frames and run ball Detection code
 last_value = 0
 print("Running ball Detection code")
 print("Hopefully pushing data to NetworkTables")
+
 while True:
     # Raw feed code -->
     # print(allianceColor.value)
     frame = stream.read()
-    frame = imutils.resize(frame, width=frame_width) # resize frame like this # Does height automatically
 
     # <-- Ball Detection code -->
 
@@ -133,7 +133,7 @@ while True:
         circles = np.uint16(np.around(circles))
         biggest_circle = circles[[i[0][2] for i in circles].index(max([i[0][2] for i in circles]))]
         center = (biggest_circle[0][0], biggest_circle[0][1])
-        talonpi.getEntry('Motor Value').setDouble((frame_width/2)-center[0])
+        talonpi.getEntry('Motor Value').setDouble(((frame_width/2)-center[0]))
     # else:
     #     talonpi.getEntry('Motor Value').setDouble(0)
     # show the frames to our screen
@@ -143,7 +143,3 @@ while True:
     # # if the 'q' key is pressed, stop the loop
     # if key == ord("q"):
     #     break
-# stop camera
-stream.release()
-# close all windows
-cv2.destroyAllWindows()
