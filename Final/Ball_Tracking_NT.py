@@ -8,6 +8,7 @@ import numpy as np
 import cv2
 from netifaces import interfaces, ifaddresses, AF_INET
 from CameraStream import WebCamVideoStream
+from tracking import Ball_Tracking_NT
 
 # region
 serverCondition = threading.Condition() #Establish a Condition
@@ -54,7 +55,9 @@ talonpi = NetworkTables.getTable('TalonPi')
 frame_width = talonpi.getAutoUpdateValue('frame_width',640,True)
 frame_width = int(frame_width.value)
 allianceColor = talonpi.getAutoUpdateValue('Alliance Color','PIREADY')
+allianceColor = allianceColor.value
 gamemode = talonpi.getAutoUpdateValue('Gamemode','PIREADY')
+gamemode = gamemode.value
 debuggingMode = talonpi.getAutoUpdateValue('Debugging',False)
 
 talonpi.getEntry('local_ip').setString(getLocalIp())
@@ -85,31 +88,4 @@ while (gamemode.value == "auto") or (debuggingMode.value == True) or (not getLoc
     frame = imutils.resize(frame, width=frame_width)
 
     # <-- Ball Detection code -->
-
-    # resize the frame, blur it, and convert it to the HSV
-    blurred = cv2.GaussianBlur(frame, (101, 101), 0)
-    hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
-    # construct a mask for red or blue, then perform a series of dilations and erosions to remove any small blobs
-    # left in the mask
-    if allianceColor.value == "blue":
-        mask = cv2.inRange(hsv, blueLower, blueUpper)
-    else:
-        mask = cv2.inRange(hsv, red1Lower, red1Upper) + cv2.inRange(hsv, red2Lower, red2Upper)
-        
-    # Define the currently used color to be checked later and error checked
-    talonpi.getEntry('Working Color').setString(allianceColor.value)
-    mask = cv2.erode(mask, None, iterations=2)
-    mask = cv2.dilate(mask, None, iterations=2)
-    # use Hough Circle Transform to find the roundest object on the screen and trace its perimeter
-    circles = cv2.HoughCircles(mask, cv2.HOUGH_GRADIENT, 2, 50, param1=ROUNDNESS_THRESH,param2=CENTER_DETECT_THRESH, minRadius=MIN_RADIUS, maxRadius=0)
-    if circles is not None:
-        circles = np.uint16(np.around(circles))
-        biggest_circle = circles[[i[0][2] for i in circles].index(max([i[0][2] for i in circles]))]
-        center = (biggest_circle[0][0], biggest_circle[0][1])
-        talonpi.getEntry('Motor Value').setDouble(((frame_width/2)-center[0]))
-    # else:
-    #     talonpi.getEntry('Motor Value').setDouble(0)
-    # show the frames to our screen (debugging)
-    # cv2.imshow("Frame", frame)
-    # cv2.imshow('Mask', mask)
-    # key = cv2.waitKey(1) & 0xFF
+    Ball_Tracking_NT(frame=frame, frame_width=frame_width, alliance=allianceColor, table='TalonPi').start()
