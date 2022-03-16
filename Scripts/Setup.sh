@@ -27,5 +27,7 @@ sudo apt update && sudo apt upgrade
 echo Installing required packages
 sudo apt install python3-pip git curl dpkg debian-archive-keyring
 echo Installing required pip modules
-#Install NetworkTables, OpenCV2 and its dependencies
+# Install NetworkTables, OpenCV2 and its dependencies
 /usr/bin/pip3 install opencv-contrib-python-headless numpy pynetworktables flask netifaces
+
+sudo apt-get -y purge libx11-6 libgtk-3-common xkb-data lxde-icon-theme raspberrypi-artwork penguinspuzzle
