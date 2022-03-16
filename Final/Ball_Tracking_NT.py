@@ -6,11 +6,10 @@ import imutils
 from networktables import NetworkTables
 import numpy as np
 import cv2
-import time
-from flask import Flask, render_template, Response
 from netifaces import interfaces, ifaddresses, AF_INET
+from CameraStream import WebCamVideoStream
 
-
+# region
 serverCondition = threading.Condition() #Establish a Condition
 rio_notified = [False]
 
@@ -23,8 +22,7 @@ def getLocalIp():
         addresses = [i['addr'] for i in ifaddresses(ifaceName).setdefault(AF_INET, [{'addr':'No IP addr'}] )]
         if(' '.join(addresses) != 'No IP addr' ):
             if not(' '.join(addresses).startswith("127.")): # Local looping Subnet
-                if (' '.join(addresses).startswith("10.5.40")):
-                    return str(' '.join(addresses))
+                return str(' '.join(addresses))
 
 def connectionListener(connected, info):
     print(info, '; Connected=%s' % connected, " local ip: "+ getLocalIp())
@@ -48,44 +46,18 @@ with serverCondition:
 
 
 # The Server has been Connected to so we can Procced with the Code !! REST OF THE CODE !!
+# endregion
 
+# Initalise Pi Values with network tables
 talonpi = NetworkTables.getTable('TalonPi')
+
+frame_width = talonpi.getAutoUpdateValue('frame_width',640,True)
+frame_width = int(frame_width.value)
 allianceColor = talonpi.getAutoUpdateValue('Alliance Color','PIREADY')
 gamemode = talonpi.getAutoUpdateValue('Gamemode','PIREADY')
 debuggingMode = talonpi.getAutoUpdateValue('Debugging',False)
+
 talonpi.getEntry('local_ip').setString(getLocalIp())
-
-frame_width = 320
-
-# Use multithreaded Camera server instead of single threaded
-class WebCamVideoStream:
-    def __init__(self, src=0):
-        self.stream = cv2.VideoCapture(src)
-        (self.grabbed, self.frame) = self.stream.read()
-        self.stopped = False
-
-    def start(self):
-        # start the thread to read frames from the video stream
-        threading.Thread(target=self.update, args=()).start()
-        return self
-
-    def update(self):
-        # keep looping infinitely until the thread is stopped
-        while True:
-            # if the thread indicator variable is set, stop the thread
-            if self.stopped:
-                return
-            # otherwise read the next frame from the stream
-            (self.grabbed, self.frame) = self.stream.read()
-
-    def read(self):
-        # return the frame most recently read
-        self.frame = imutils.resize(self.frame, width=frame_width)
-        return self.frame
-
-    def stop(self):
-        # indicate that the thread should be stopped
-        self.stopped = True
 
 # Call camera from thread
 stream = WebCamVideoStream(src=0).start()
@@ -103,14 +75,14 @@ CENTER_DETECT_THRESH = 60
 MIN_RADIUS = 20
 
 # Get raw frames and run ball Detection code
-last_value = 0
 print("Running ball Detection code")
 print("Hopefully pushing data to NetworkTables")
 
-while (gamemode == "auto") or (debuggingMode == True):
+while (gamemode.value == "auto") or (debuggingMode.value == True) or (not getLocalIp().startswith('10.5.40.')):
     # Raw feed code -->
     # print(allianceColor.value)
     frame = stream.read()
+    frame = imutils.resize(frame, width=frame_width)
 
     # <-- Ball Detection code -->
 
@@ -141,6 +113,3 @@ while (gamemode == "auto") or (debuggingMode == True):
     # cv2.imshow("Frame", frame)
     # cv2.imshow('Mask', mask)
     # key = cv2.waitKey(1) & 0xFF
-    # # if the 'q' key is pressed, stop the loop
-    # if key == ord("q"):
-    #     break
