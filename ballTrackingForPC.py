@@ -1,8 +1,10 @@
 # import the necessary packages
-import numpy as np
-import cv2
-import time
 import threading
+import time
+
+import cv2
+import numpy as np
+
 # define HoughCircles constants
 ROUNDNESS_THRESH = 10
 CENTER_DETECT_THRESH = 60

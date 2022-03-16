@@ -1,6 +1,8 @@
 # import the necessary packages
 from threading import Thread
+
 import cv2
+
 
 class WebCamVideoStream:
     def __init__(self, src=0):

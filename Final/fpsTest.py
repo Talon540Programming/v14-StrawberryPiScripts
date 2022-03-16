@@ -1,8 +1,10 @@
-from threading import Thread
-import numpy as np
-import cv2
 import time
+from threading import Thread
+
+import cv2
 import imutils
+import numpy as np
+
 from CameraStream import WebCamVideoStream
 
 # creating the videocapture object

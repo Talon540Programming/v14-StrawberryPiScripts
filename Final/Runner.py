@@ -1,18 +1,18 @@
 # import the necessary packages
-from netifaces import interfaces, ifaddresses, AF_INET
-import imutils
 import threading
-import imutils
-from networktables import NetworkTables
-import numpy as np
-import cv2
 import time
-from netifaces import interfaces, ifaddresses, AF_INET
+
+import cv2
+import imutils
+import numpy as np
+from netifaces import AF_INET, ifaddresses, interfaces
+from networktables import NetworkTables
+
 from CameraStream import WebCamVideoStream
+from tracking import Ball_Tracking, Ball_Tracking_NT
+
 # from BallTracking import ballTracking
 
-from tracking import Ball_Tracking
-from tracking import Ball_Tracking_NT
 
 
 frame_width = 640

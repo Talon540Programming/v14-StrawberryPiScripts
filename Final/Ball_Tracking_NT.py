@@ -1,12 +1,12 @@
 # import the necessary packages
-from netifaces import interfaces, ifaddresses, AF_INET
-import imutils
 import threading
-import imutils
-from networktables import NetworkTables
-import numpy as np
+
 import cv2
-from netifaces import interfaces, ifaddresses, AF_INET
+import imutils
+import numpy as np
+from netifaces import AF_INET, ifaddresses, interfaces
+from networktables import NetworkTables
+
 from CameraStream import WebCamVideoStream
 from tracking import Ball_Tracking_NT
 

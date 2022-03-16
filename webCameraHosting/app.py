@@ -1,11 +1,12 @@
 # import the necessary packages
-import numpy as np
-import cv2
 import time
-import imutils
-from flask import Flask, render_template, Response
-from netifaces import interfaces, ifaddresses, AF_INET
 from threading import Thread
+
+import cv2
+import imutils
+import numpy as np
+from flask import Flask, Response, render_template
+from netifaces import AF_INET, ifaddresses, interfaces
 
 # Get the local IP address for the Device
 # Might throw BS if on a mac. Dont cry
@@ -19,6 +20,7 @@ for ifaceName in interfaces():
 app = Flask(__name__)
 
 import argparse
+
 parser = argparse.ArgumentParser(description='Choose Color')
 parser.add_argument("-c", help="Pick Ball Color") #For testing
 args = parser.parse_args()
@@ -76,24 +78,26 @@ ROUNDNESS_THRESH = 10
 CENTER_DETECT_THRESH = 60
 MIN_RADIUS = 20
 
-def ballDetection(frame):
-    # resize the frame, blur it, and convert it to the HSV
-    blurred = cv2.GaussianBlur(frame, (101, 101), 0)
-    hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
-    # construct a mask for red or blue, then perform a series of dilations and erosions to remove any small blobs
-    # left in the mask
-    mask = cv2.inRange(hsv, red1Lower, red1Upper) + cv2.inRange(hsv, red2Lower, red2Upper)
-    mask = cv2.erode(mask, None, iterations=2)
-    mask = cv2.dilate(mask, None, iterations=2)
-    # use Hough Circle Transform to find the roundest object on the screen and trace its perimeter
-    circles = cv2.HoughCircles(mask, cv2.HOUGH_GRADIENT, 2, 50, param1=ROUNDNESS_THRESH,param2=CENTER_DETECT_THRESH, minRadius=MIN_RADIUS, maxRadius=0)
-    if circles is not None:
-        circles = np.uint16(np.around(circles))
-        biggest_circle = circles[[i[0][2] for i in circles].index(max([i[0][2] for i in circles]))]
-        center = (biggest_circle[0][0], biggest_circle[0][1])
-        print((center[0] - 640) / 8000)
-    else:
-        print(None)
+# region
+# def ballDetection(frame):
+#     # resize the frame, blur it, and convert it to the HSV
+#     blurred = cv2.GaussianBlur(frame, (101, 101), 0)
+#     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
+#     # construct a mask for red or blue, then perform a series of dilations and erosions to remove any small blobs
+#     # left in the mask
+#     mask = cv2.inRange(hsv, red1Lower, red1Upper) + cv2.inRange(hsv, red2Lower, red2Upper)
+#     mask = cv2.erode(mask, None, iterations=2)
+#     mask = cv2.dilate(mask, None, iterations=2)
+#     # use Hough Circle Transform to find the roundest object on the screen and trace its perimeter
+#     circles = cv2.HoughCircles(mask, cv2.HOUGH_GRADIENT, 2, 50, param1=ROUNDNESS_THRESH,param2=CENTER_DETECT_THRESH, minRadius=MIN_RADIUS, maxRadius=0)
+#     if circles is not None:
+#         circles = np.uint16(np.around(circles))
+#         biggest_circle = circles[[i[0][2] for i in circles].index(max([i[0][2] for i in circles]))]
+#         center = (biggest_circle[0][0], biggest_circle[0][1])
+#         print((center[0] - 640) / 8000)
+#     else:
+#         print(None)
+# endregion
 
 # loop over some frames
 def gen():
@@ -107,7 +111,7 @@ def gen():
                 b'Content-Type: image/jpeg\r\n\r\n' + biteBuffer + b'\r\n')
 
         # Ball detection Code -->
-        ballDetection(frame)
+        # ballDetection(frame)
 
 @app.route('/raw')
 def raw_feed():

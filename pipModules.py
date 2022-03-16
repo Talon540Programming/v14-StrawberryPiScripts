@@ -1,11 +1,10 @@
 import math
-from netifaces import interfaces, ifaddresses, AF_INET
-import imutils
 import threading
-import imutils
-from networktables import NetworkTables
-import numpy as np
-import cv2
 import time
-from flask import Flask, render_template, Response
-from netifaces import interfaces, ifaddresses, AF_INET
+
+import cv2
+import imutils
+import numpy as np
+from flask import Flask, Response, render_template
+from netifaces import AF_INET, ifaddresses, interfaces
+from networktables import NetworkTables

@@ -5,10 +5,12 @@
 # 2. Run 'ping roboRIO-540-FRC.local' in terminal
 # 3. If it is successful then run this script, else troubleshoot
 
-import time
 import threading
-from networktables import NetworkTableEntry, NetworkTables, NetworkTablesInstance, NetworkTable
-from netifaces import interfaces, ifaddresses, AF_INET
+import time
+
+from netifaces import AF_INET, ifaddresses, interfaces
+from networktables import (NetworkTable, NetworkTableEntry, NetworkTables,
+                           NetworkTablesInstance)
 
 serverCondition = threading.Condition() #Establish a Condition
 rio_notified = [False]
