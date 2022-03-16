@@ -52,13 +52,9 @@ with serverCondition:
 # Initalise Pi Values with network tables
 talonpi = NetworkTables.getTable('TalonPi')
 
-frame_width = talonpi.getAutoUpdateValue('frame_width',640,True)
-frame_width = int(frame_width.value)
-allianceColor = talonpi.getAutoUpdateValue('Alliance Color','PIREADY')
-allianceColor = allianceColor.value
-gamemode = talonpi.getAutoUpdateValue('Gamemode','PIREADY')
-gamemode = gamemode.value
-debuggingMode = talonpi.getAutoUpdateValue('Debugging',False)
+frame_width = int(talonpi.getAutoUpdateValue('frame_width',640,True).value)
+gamemode = talonpi.getAutoUpdateValue('Gamemode','PIREADY',True).value
+debuggingMode = talonpi.getAutoUpdateValue('Debugging Mode?',False,True).value
 
 talonpi.getEntry('local_ip').setString(getLocalIp())
 
@@ -81,11 +77,11 @@ MIN_RADIUS = 20
 print("Running ball Detection code")
 print("Hopefully pushing data to NetworkTables")
 
-while (gamemode.value == "auto") or (debuggingMode.value == True) or (not getLocalIp().startswith('10.5.40.')):
+while (gamemode == "auto") or (debuggingMode == True) or (not getLocalIp().startswith('10.5.40.')):
     # Raw feed code -->
-    # print(allianceColor.value)
+    # print(allianceColor)
     frame = stream.read()
     frame = imutils.resize(frame, width=frame_width)
 
     # <-- Ball Detection code -->
-    Ball_Tracking_NT(frame=frame, frame_width=frame_width, alliance=allianceColor, table='TalonPi').start()
+    Ball_Tracking_NT(frame=frame, frame_width=frame_width, table_key='TalonPi').start()

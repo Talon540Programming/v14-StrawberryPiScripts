@@ -42,4 +42,9 @@ while True:
 
     # <-- Ball Detection code -->
     # ballTracking(frame,frame_width)
-    Ball_Tracking(frame=frame,frame_width=frame_width).start()
+    Ball_Tracking(frame=frame,frame_width=frame_width,alliance="red").start()
+    # cv2.imshow('frame',frame)
+    # key = cv2.waitKey(1) & 0xFF
+    # if key == ord("q"):
+    #     break
+    

@@ -20,9 +20,10 @@ class Ball_Tracking: # no network tables
     """ The Ball_Tracking class is used to track the ball's location and return the distance from the center of the screen
         This doesnt use network tables so it should be used for local testing and debugging (say on your computer)
     """
-    def __init__(self,frame,frame_width=0):
+    def __init__(self,frame,frame_width=0,alliance="red"):
         self.frame_width = frame_width
         self.frame = frame
+        self.allianceColor = alliance
         
     def start(self):
         Thread(target=self.ballTracking, args=()).start()
@@ -34,7 +35,10 @@ class Ball_Tracking: # no network tables
         hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
         # construct a mask for red or blue, then perform a series of dilations and erosions to remove any small blobs
         # left in the mask
-        mask = cv2.inRange(hsv, blueLower, blueUpper)
+        if(self.allianceColor == "blue"):
+            mask = cv2.inRange(hsv, blueLower, blueUpper)
+        else:
+            mask = cv2.inRange(hsv, red1Lower, red1Upper) + cv2.inRange(hsv, red2Lower, red2Upper)
         # Define the currently used color to be checked later and error checked
         mask = cv2.erode(mask, None, iterations=2)
         mask = cv2.dilate(mask, None, iterations=2)
@@ -56,11 +60,12 @@ class Ball_Tracking_NT: # with network tables
         to wait up for the frame to be analyzed.
     """
     
-    def __init__(self, frame, frame_width=0, alliance="red",table='TalonPi'):
+    def __init__(self, frame, frame_width=0, table_key='TalonPi'):
         self.frame_width = frame_width
         self.frame = frame
-        self.alliance = alliance
-        self.table = NetworkTables.getTable(table)
+        self.table = NetworkTables.getTable(table_key)
+        self.zeros = self.table.getAutoUpdateValue('Post Zeros?',False,True).value
+        self.alliance = self.table.getAutoUpdateValue('Alliance Color','waiting',True).value
         
         
     def start(self):
@@ -89,5 +94,6 @@ class Ball_Tracking_NT: # with network tables
             biggest_circle = circles[[i[0][2] for i in circles].index(max([i[0][2] for i in circles]))]
             center = (biggest_circle[0][0], biggest_circle[0][1])
             self.table.getEntry('Motor Value').setDouble(((self.frame_width/2)-center[0]))
-        # else:
-        #     self.table.getEntry('Motor Value').setDouble(0)
+        else:
+            if(self.zeros):
+                self.table.getEntry('Motor Value').setDouble(0)
