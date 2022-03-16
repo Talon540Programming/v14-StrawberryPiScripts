@@ -20,16 +20,19 @@ class Ball_Tracking: # no network tables
     """ The Ball_Tracking class is used to track the ball's location and return the distance from the center of the screen
         This doesnt use network tables so it should be used for local testing and debugging (say on your computer)
     """
-    def __init__(self,frame,frame_width=0,alliance="red"):
+    def __init__(self,frame,frame_width=0,alliance="blue",):
         self.frame_width = frame_width
         self.frame = frame
         self.allianceColor = alliance
+        self.table = NetworkTables.getTable('TalonPi')
+        self.lastValue = 0
         
     def start(self):
         Thread(target=self.ballTracking, args=()).start()
         return self
     
     def ballTracking(self):
+        # region
         # resize the frame, blur it, and convert it to the HSV
         blurred = cv2.GaussianBlur(self.frame, (101, 101), 0)
         hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
@@ -44,14 +47,22 @@ class Ball_Tracking: # no network tables
         mask = cv2.dilate(mask, None, iterations=2)
         # use Hough Circle Transform to find the roundest object on the screen and trace its perimeter
         circles = cv2.HoughCircles(mask, cv2.HOUGH_GRADIENT, 2, 50, param1=ROUNDNESS_THRESH,param2=CENTER_DETECT_THRESH, minRadius=MIN_RADIUS, maxRadius=0)
+        # endregion
         if circles is not None:
             circles = np.uint16(np.around(circles))
             biggest_circle = circles[[i[0][2] for i in circles].index(max([i[0][2] for i in circles]))]
             center = (biggest_circle[0][0], biggest_circle[0][1])
-            print(((self.frame_width/2)-center[0]))
+            if not self.lastValue == ((self.frame_width/2)-center[0]):
+                print(((self.frame_width/2)-center[0]))
+                self.table.getEntry('Motor Value').setDouble(((self.frame_width/2)-center[0]))
+                self.lastValue = (((self.frame_width/2)-center[0]))
         else:
-            print("none")
+            if not self.lastValue == 0:
+                print("none")
+                self.table.getEntry('Motor Value').setDouble(0)
 
+
+# !!!!! DEPRECEATED !!!!!
 class Ball_Tracking_NT: # with network tables
     """ The Ball_Tracking class is used to track the ball's location and return the distance from the center of the screen by posting it to Network Tables 
         This works specifically by connecting to the TalonPi network table, it should not be called unless you are connected to the RoboRio network and a 
@@ -60,12 +71,12 @@ class Ball_Tracking_NT: # with network tables
         to wait up for the frame to be analyzed.
     """
     
-    def __init__(self, frame, frame_width=0, table_key='TalonPi'):
+    def __init__(self, frame, frame_width=640, postZeros=False, alliance="blue"):
         self.frame_width = frame_width
         self.frame = frame
-        self.table = NetworkTables.getTable(table_key)
-        self.zeros = self.table.getAutoUpdateValue('Post Zeros?',False,True).value
-        self.alliance = self.table.getAutoUpdateValue('Alliance Color','waiting',True).value
+        self.table = NetworkTables.getTable('TalonPi')
+        self.zeros = postZeros
+        self.alliance = alliance
         
         
     def start(self):
@@ -94,6 +105,7 @@ class Ball_Tracking_NT: # with network tables
             biggest_circle = circles[[i[0][2] for i in circles].index(max([i[0][2] for i in circles]))]
             center = (biggest_circle[0][0], biggest_circle[0][1])
             self.table.getEntry('Motor Value').setDouble(((self.frame_width/2)-center[0]))
+            print(((self.frame_width/2)-center[0]))
         else:
             if(self.zeros):
                 self.table.getEntry('Motor Value').setDouble(0)

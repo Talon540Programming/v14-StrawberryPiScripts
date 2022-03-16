@@ -8,7 +8,7 @@ from netifaces import AF_INET, ifaddresses, interfaces
 from networktables import NetworkTables
 
 from CameraStream import WebCamVideoStream
-from tracking import Ball_Tracking_NT
+from tracking import Ball_Tracking
 
 # region
 serverCondition = threading.Condition() #Establish a Condition
@@ -53,35 +53,24 @@ with serverCondition:
 talonpi = NetworkTables.getTable('TalonPi')
 
 frame_width = int(talonpi.getAutoUpdateValue('frame_width',640,True).value)
+frame_height = int(talonpi.getAutoUpdateValue('frame_height',360,True).value)
 gamemode = talonpi.getAutoUpdateValue('Gamemode','PIREADY',True).value
 debuggingMode = talonpi.getAutoUpdateValue('Debugging Mode?',False,True).value
+allianceColor = talonpi.getAutoUpdateValue('Alliance Color',"blue",True).value
+
+
 
 talonpi.getEntry('local_ip').setString(getLocalIp())
 
+
 # Call camera from thread
 stream = WebCamVideoStream(src=0).start()
-# stream = cv2.VideoCapture(1)
 
-# Define ball and masking variables
-blueLower = (95, 90, 20)
-blueUpper = (135, 255, 255)
-red1Lower = (165, 90, 20)
-red1Upper = (180, 255, 255)
-red2Lower = (0, 90, 20)
-red2Upper = (15, 255, 255)
-ROUNDNESS_THRESH = 10
-CENTER_DETECT_THRESH = 60
-MIN_RADIUS = 20
-
-# Get raw frames and run ball Detection code
-print("Running ball Detection code")
-print("Hopefully pushing data to NetworkTables")
-
-while (gamemode == "auto") or (debuggingMode == True) or (not getLocalIp().startswith('10.5.40.')):
+while True:
     # Raw feed code -->
-    # print(allianceColor)
+    # print(allianceColor.value)
     frame = stream.read()
-    frame = imutils.resize(frame, width=frame_width)
+    frame = imutils.resize(frame, width=frame_width,height=frame_height)
 
     # <-- Ball Detection code -->
-    Ball_Tracking_NT(frame=frame, frame_width=frame_width, table_key='TalonPi').start()
+    Ball_Tracking(frame=frame,frame_width=frame_width,alliance=allianceColor).start()
